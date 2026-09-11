@@ -189,6 +189,7 @@ export default function App() {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
+    void fire("idle");
 
     return () => {
       cancelAnimationFrame(raf);
