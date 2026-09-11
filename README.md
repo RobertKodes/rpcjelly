@@ -13,7 +13,7 @@ Live: https://robertkodes.github.io/rpcjelly/
 3. When the response lands, the mesh gets an impulse scaled by RTT.
 4. Corner HUD: last ms, rolling p50/p90, endpoint, slot.
 
-Official `api.mainnet-beta.solana.com` often 403s browser Origins. We start on PublicNode and hop if an endpoint is rude. Click the endpoint name to hop yourself. Pin your own with `VITE_RPC_URL`.
+Official `api.mainnet-beta.solana.com` often 403s browser Origins. We start on PublicNode, then OnFinality (often 429 — that's the sour wobble), then official. Click the endpoint name to hop. Pin your own with `VITE_RPC_URL`.
 
 No wallet. No trade. Public RPC only. 429s back off.
 
@@ -38,5 +38,7 @@ npm run preview
 ## Smoke
 
 - poke → request in flight (tiny wait dot) → impulse
-- fast samples stay snappy; throttle / hop / a bad endpoint should look drunk
-- save tape, scrub it
+- ~110ms stays a tight blob; ~250ms+ squash; 429 goes yellow-green and sloshes
+- save tape, scrub it (JSON). film 6s if the browser has MediaRecorder
+
+GitHub Pages: branch `gh-pages`, folder `/`. Live: https://robertkodes.github.io/rpcjelly/
