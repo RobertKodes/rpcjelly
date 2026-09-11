@@ -51,8 +51,9 @@ export function layoutJelly(
   for (const ring of RING_DEF) {
     for (let k = 0; k < ring.n; k++) {
       const ang = ring.n === 1 ? 0 : (k / ring.n) * Math.PI * 2 - Math.PI / 2;
-      const restX = cx + Math.cos(ang) * radius * ring.t;
-      const restY = cy + Math.sin(ang) * radius * ring.t;
+      const lump = ring.t === 0 ? 1 : 1 + 0.055 * Math.sin(ang * 3 + ring.t * 4);
+      const restX = cx + Math.cos(ang) * radius * ring.t * lump;
+      const restY = cy + Math.sin(ang) * radius * ring.t * lump;
       const p = jelly.particles[i];
       const dx = restX - p.restX;
       const dy = restY - p.restY;
@@ -88,8 +89,9 @@ function buildMesh(jelly: Jelly, cx: number, cy: number, radius: number): void {
     const ids: number[] = [];
     for (let k = 0; k < ring.n; k++) {
       const ang = ring.n === 1 ? 0 : (k / ring.n) * Math.PI * 2 - Math.PI / 2;
-      const x = cx + Math.cos(ang) * radius * ring.t;
-      const y = cy + Math.sin(ang) * radius * ring.t;
+      const lump = ring.t === 0 ? 1 : 1 + 0.055 * Math.sin(ang * 3 + ring.t * 4);
+      const x = cx + Math.cos(ang) * radius * ring.t * lump;
+      const y = cy + Math.sin(ang) * radius * ring.t * lump;
       ids.push(particles.length);
       particles.push({
         x,
@@ -125,7 +127,7 @@ function buildMesh(jelly: Jelly, cx: number, cy: number, radius: number): void {
   for (const ids of rings) {
     if (ids.length < 2) continue;
     const ringIndex = particles[ids[0]].ring;
-    const k = ringIndex === rings.length - 1 ? 0.42 : 0.55;
+    const k = ringIndex === rings.length - 1 ? 0.28 : 0.4;
     for (let i = 0; i < ids.length; i++) {
       addSpring(ids[i], ids[(i + 1) % ids.length], k);
       if (ids.length >= 8) addSpring(ids[i], ids[(i + 2) % ids.length], k * 0.55);
@@ -154,8 +156,8 @@ function buildMesh(jelly: Jelly, cx: number, cy: number, radius: number): void {
           secondD = d;
         }
       }
-      addSpring(outer[i], best, 0.5);
-      if (inner.length > 1) addSpring(outer[i], second, 0.28);
+      addSpring(outer[i], best, 0.36);
+      if (inner.length > 1) addSpring(outer[i], second, 0.2);
     }
   }
 
@@ -178,29 +180,38 @@ export function applyImpulse(
   kind: ImpulseKind,
   strength: number,
 ): void {
-  const amp = (strength / 28) * jelly.radius * 0.24;
+  const amp = (strength / 28) * jelly.radius;
   const { x: mx, y: my } = com(jelly);
+  const ang = Math.random() * Math.PI * 2;
+  const ax = Math.cos(ang);
+  const ay = Math.sin(ang);
+  const tx = -ay;
+  const ty = ax;
+  let squash = 0.2;
+  let bulge = 0.16;
+  let kick = amp * 0.28;
+  let jitter = amp * 0.04;
+  if (kind === "tight") {
+    squash = 0.11;
+    bulge = 0.09;
+    kick = amp * 0.16;
+    jitter = amp * 0.02;
+  } else if (kind === "ugly") {
+    squash = 0.38;
+    bulge = 0.3;
+    kick = amp * 0.55;
+    jitter = amp * 0.22;
+  }
   for (const p of jelly.particles) {
     if (p.ring === 0) continue;
     const dx = p.x - mx;
     const dy = p.y - my;
-    const len = hypot(dx, dy) || 1;
-    const nx = dx / len;
-    const ny = dy / len;
-    const tx = -ny;
-    const ty = nx;
-    if (kind === "tight") {
-      const s = amp * 0.42 * (0.82 + Math.random() * 0.28);
-      p.x += nx * s;
-      p.y += ny * s;
-    } else if (kind === "wobble") {
-      const s = amp * (0.72 + Math.random() * 0.5);
-      p.x += nx * s + tx * s * 0.38;
-      p.y += ny * s + ty * s * 0.38;
-    } else {
-      p.x += (Math.random() - 0.5) * amp * 2.3 + nx * amp * 0.35;
-      p.y += (Math.random() - 0.5) * amp * 2.3 + ny * amp * 0.35;
-    }
+    const along = dx * ax + dy * ay;
+    const across = dx * tx + dy * ty;
+    p.x += ax * along * -squash + tx * across * bulge + ax * kick;
+    p.y += ay * along * -squash + ty * across * bulge + ay * kick;
+    p.x += (Math.random() - 0.5) * jitter;
+    p.y += (Math.random() - 0.5) * jitter;
   }
 }
 
@@ -221,12 +232,13 @@ function integrate(jelly: Jelly): void {
     p.x += vx;
     p.y += vy;
     // soft home spring so the blob remembers its rest shape
-    p.x += (p.restX - p.x) * 0.012 * p.invMass;
-    p.y += (p.restY - p.y) * 0.012 * p.invMass;
+    const home = jelly.grab ? 0.002 : 0.007;
+    p.x += (p.restX - p.x) * home * p.invMass;
+    p.y += (p.restY - p.y) * home * p.invMass;
   }
 
   if (jelly.grab) {
-    const R = jelly.radius * 0.62;
+    const R = jelly.radius * 1.05;
     const gx = jelly.grab.x;
     const gy = jelly.grab.y;
     for (const p of particles) {
@@ -234,15 +246,15 @@ function integrate(jelly: Jelly): void {
       const dy = gy - p.y;
       const d = hypot(dx, dy);
       if (d > R) continue;
-      const w = (1 - d / R) ** 2 * 0.5 * p.invMass;
+      const w = (1 - d / R) ** 1.05 * (p.ring === 0 ? 0.28 : 0.88);
       p.x += dx * w;
       p.y += dy * w;
-      p.px += (p.x - p.px) * 0.18;
-      p.py += (p.y - p.py) * 0.18;
+      p.px = p.x * 0.72 + p.px * 0.28;
+      p.py = p.y * 0.72 + p.py * 0.28;
     }
   }
 
-  const iters = 5;
+  const iters = jelly.grab ? 2 : 4;
   const kScale = jelly.stiffnessScale;
   for (let n = 0; n < iters; n++) {
     for (const s of jelly.springs) {
@@ -265,8 +277,8 @@ function integrate(jelly: Jelly): void {
 
   // keep the mass on screen after a big slosh
   const c = com(jelly);
-  const pullX = (jelly.cx - c.x) * 0.018;
-  const pullY = (jelly.cy - c.y) * 0.018;
+  const pullX = (jelly.cx - c.x) * (jelly.grab ? 0.004 : 0.012);
+  const pullY = (jelly.cy - c.y) * (jelly.grab ? 0.004 : 0.012);
   for (const p of particles) {
     p.x += pullX;
     p.y += pullY;

@@ -45,9 +45,10 @@ export class RpcSession {
     this.inflight = true;
     let hopped = false;
     let result = await probeGetSlot(this.current().url);
-
-    if (result.status === "forbidden" || shouldHopOnError(result)) {
+    let hops = 0;
+    while (shouldHop(result) && hops < this.endpoints.length - 1) {
       this.hop();
+      hops += 1;
       hopped = true;
       result = await probeGetSlot(this.current().url);
     }
@@ -73,13 +74,11 @@ export class RpcSession {
   }
 }
 
-function shouldHopOnError(result: ProbeResult): boolean {
-  if (result.status !== "error") return false;
+function shouldHop(result: ProbeResult): boolean {
+  if (result.ok || result.status === "rate-limit") return false;
+  if (result.status === "forbidden") return true;
   const msg = (result.error ?? "").toLowerCase();
-  return (
-    msg.includes("failed to fetch") ||
-    msg.includes("network") ||
-    msg.includes("cors") ||
-    msg.includes("http 5")
+  return /failed to fetch|network|cors|http 400|http 401|http 403|http 404|http 5|free plan/.test(
+    msg,
   );
 }

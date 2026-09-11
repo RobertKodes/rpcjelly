@@ -34,7 +34,7 @@ export function feelFromProbe(rttMs: number, status: ProbeStatus): Feel {
   if (rttMs < 80) {
     return {
       kind: "tight",
-      strength: 6.5 + rttMs * 0.035,
+      strength: 9 + rttMs * 0.04,
       damping: 0.9,
       stiffness: 1.16,
       sour: false,
@@ -44,7 +44,7 @@ export function feelFromProbe(rttMs: number, status: ProbeStatus): Feel {
   if (rttMs < 180) {
     return {
       kind: "wobble",
-      strength: 11 + (rttMs - 80) * 0.07,
+      strength: 15 + (rttMs - 80) * 0.08,
       damping: 0.94,
       stiffness: 1,
       sour: false,
@@ -54,7 +54,7 @@ export function feelFromProbe(rttMs: number, status: ProbeStatus): Feel {
   if (rttMs < 420) {
     return {
       kind: "wobble",
-      strength: 18 + (rttMs - 180) * 0.05,
+      strength: 22 + (rttMs - 180) * 0.06,
       damping: 0.968,
       stiffness: 0.86,
       sour: rttMs > 300,
@@ -63,7 +63,7 @@ export function feelFromProbe(rttMs: number, status: ProbeStatus): Feel {
   }
   return {
     kind: "ugly",
-    strength: 27 + Math.min(rttMs, 1400) * 0.008,
+    strength: 32 + Math.min(rttMs, 1400) * 0.01,
     damping: 0.986,
     stiffness: 0.7,
     sour: true,

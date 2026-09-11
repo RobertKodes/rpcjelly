@@ -48,13 +48,16 @@ export async function probeGetSlot(url: string): Promise<ProbeResult> {
     }
     const json = (await res.json()) as RpcBody;
     if (json.error) {
+      const msg = json.error.message ?? "rpc error";
+      const rate =
+        json.error.code === -32029 || /too many|rate.?limit/i.test(msg);
       return {
         ok: false,
         rttMs,
         slot: null,
         url,
-        status: "error",
-        error: json.error.message ?? "rpc error",
+        status: rate ? "rate-limit" : "error",
+        error: msg,
       };
     }
     const slot = typeof json.result === "number" ? json.result : null;
