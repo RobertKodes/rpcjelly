@@ -1,0 +1,56 @@
+:root {
+  color-scheme: dark;
+  --bg: #0a0b0d;
+  --ink: #d5dae0;
+  --mute: #7a828c;
+  --line: rgba(255, 255, 255, 0.08);
+  --panel: rgba(10, 12, 16, 0.62);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "ss01" 1, "kern" 1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  overflow: hidden;
+  user-select: none;
+}
+
+button,
+input,
+label {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.28rem 0.55rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button.active {
+  background: rgba(255, 255, 255, 0.14);
+}
