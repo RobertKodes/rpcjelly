@@ -35,4 +35,5 @@ export type Jelly = {
   damping: number;
   stiffnessScale: number;
   waiting: boolean;
+  restArea: number;
 };

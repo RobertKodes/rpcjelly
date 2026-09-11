@@ -5,7 +5,6 @@ export type Endpoint = {
 
 const PUBLIC: Endpoint[] = [
   { name: "publicnode", url: "https://solana-rpc.publicnode.com" },
-  { name: "leorpc", url: "https://solana.leorpc.com/?api_key=FREE" },
   { name: "onfinality", url: "https://solana.api.onfinality.io/public" },
   {
     name: "solana official",
